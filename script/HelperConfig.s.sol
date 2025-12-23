@@ -31,7 +31,7 @@ contract HelperConfig is Script {
             interval: 30,
             vrfCoordinator: 0x8103B0A8A00be2DDC778e6e7eaa21791Cd364625,
             gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
-            subscriptionId: 0,
+            subscriptionId: 38571553465983219602667234881809704093690581667501781478931929193378117925556,
             callbackGasLimit: 500000
         });
     }
@@ -43,7 +43,6 @@ contract HelperConfig is Script {
 
         vm.startBroadcast();
         VRFCoordinatorV2_5Mock vrfCoordinatorMock = new VRFCoordinatorV2_5Mock(0.25 ether, 1e9, 4e15);
-        MockLinkToken token = new MockLinkToken();
         uint256 subscriptionId = vrfCoordinatorMock.createSubscription();
         vm.stopBroadcast();
 
