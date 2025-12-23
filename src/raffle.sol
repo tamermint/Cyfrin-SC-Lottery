@@ -52,7 +52,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         //Players need to pay an entrance fee to okay in the raffle
         //one way to revert, only works in 0.8.26 and above pragmas
         //require(msg.value >= i_entranceFee, SendMoreToEnterRaffle());
-        if (msg.value <= i_entranceFee) {
+        if (msg.value < i_entranceFee) {
             revert Raffle__SendMoreToEnterRaffle();
         }
         s_players.push(payable(msg.sender));
@@ -68,7 +68,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         //get random number
     }
 
-    function requestRandomWords() internal returns (uint256 requestID) {
+    function requestRandomWords() public returns (uint256 requestID) {
         requestID = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: i_gaslane,
@@ -89,8 +89,20 @@ contract Raffle is VRFConsumerBaseV2Plus {
         return i_entranceFee;
     }
 
-    function getPlayers() public view returns (address payable[] memory) {
-        return s_players;
+    function getPlayers(uint256 index) public view returns (address) {
+        return s_players[index];
+    }
+
+    function getRequestConfirmations() public pure returns (uint16) {
+        return REQUEST_CONFIRMATIONS;
+    }
+
+    function getNumWords() public pure returns (uint32) {
+        return NUM_WORDS;
+    }
+
+    function getNumPlayers() public view returns (uint256) {
+        return s_players.length;
     }
 }
 
