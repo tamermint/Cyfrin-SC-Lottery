@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.19;
 
-import {Test, console2} from "forge-std/Test.sol";
+import {Test} from "forge-std/Test.sol";
+import {console} from "forge-std/console.sol";
 import {Raffle} from "../../src/raffle.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "@chainlink/contracts/src/v0.8/mocks/MockLinkToken.sol";
@@ -62,5 +63,11 @@ contract RaffleTest is Test {
         emit EnteredRaffle(PLAYER);
 
         raffle.enterRaffle{value: entranceFee}();
+    }
+
+    function testRaffleStateIsOpenWhenContractIsInitialized() public view {
+        uint256 state = uint256(uint8(raffle.getRaffleState()));
+        console.logUint(state);
+        assertEq(state, uint256(uint8(Raffle.RaffleState.OPEN)));
     }
 }
