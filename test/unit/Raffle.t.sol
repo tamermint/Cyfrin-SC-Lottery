@@ -4,6 +4,7 @@ pragma solidity 0.8.19;
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 import {Raffle} from "../../src/raffle.sol";
+import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {MockLinkToken} from "@chainlink/contracts/src/v0.8/mocks/MockLinkToken.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
@@ -12,9 +13,9 @@ contract RaffleTest is Test {
     //EVENTS
     event EnteredRaffle(address indexed player);
 
-    Raffle raffle;
+    Raffle public raffle;
     MockLinkToken token;
-    HelperConfig helper;
+    HelperConfig public helperConfig;
 
     bytes32 gaslane;
     uint256 entranceFee;
@@ -23,30 +24,30 @@ contract RaffleTest is Test {
     uint16 minimumRequestConfirmations;
     uint32 callbackGasLimit;
     uint32 numWords;
-    VRFCoordinatorV2_5Mock vrfCoordinator;
+    address vrfCoordinator;
 
     address public PLAYER = makeAddr("player");
     uint256 public constant STARTING_BALANCE = 10 ether;
     uint256 public constant LINK_BALANCE = 100 ether;
 
     function setUp() external {
-        helper = new HelperConfig();
+        DeployRaffle deployer = new DeployRaffle();
+        (raffle, helperConfig) = deployer.deployContract();
         vm.deal(PLAYER, STARTING_BALANCE);
-        HelperConfig.NetworkConfig memory networkConfig = helper.getConfig();
-        raffle = new Raffle(
-            networkConfig.entranceFee,
-            networkConfig.interval,
-            networkConfig.vrfCoordinator,
-            networkConfig.gasLane,
-            networkConfig.subscriptionId,
-            networkConfig.callbackGasLimit
-        );
-        vrfCoordinator = VRFCoordinatorV2_5Mock(networkConfig.vrfCoordinator);
-        subscriptionId = networkConfig.subscriptionId;
+        HelperConfig.NetworkConfig memory networkConfig = helperConfig.getConfig();
+
         entranceFee = networkConfig.entranceFee;
+        interval = networkConfig.interval;
+        vrfCoordinator = networkConfig.vrfCoordinator;
+        gaslane = networkConfig.gasLane;
+        subscriptionId = networkConfig.subscriptionId;
+        callbackGasLimit = networkConfig.callbackGasLimit;
+
+        raffle = new Raffle(entranceFee, interval, vrfCoordinator, gaslane, subscriptionId, callbackGasLimit);
+
         vm.startPrank(msg.sender);
-        vrfCoordinator.fundSubscription(subscriptionId, 100 ether);
-        vrfCoordinator.addConsumer(subscriptionId, address(raffle));
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, 100 ether);
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subscriptionId, address(raffle));
         vm.stopPrank();
     }
 
