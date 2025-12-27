@@ -13,9 +13,8 @@ contract RaffleTest is Test {
     event EnteredRaffle(address indexed player);
 
     Raffle raffle;
-    address v2_5Coordinator;
     MockLinkToken token;
-    HelperConfig config;
+    HelperConfig helper;
 
     bytes32 gaslane;
     uint256 entranceFee;
@@ -24,20 +23,30 @@ contract RaffleTest is Test {
     uint16 minimumRequestConfirmations;
     uint32 callbackGasLimit;
     uint32 numWords;
+    VRFCoordinatorV2_5Mock vrfCoordinator;
 
     address public PLAYER = makeAddr("player");
     uint256 public constant STARTING_BALANCE = 10 ether;
     uint256 public constant LINK_BALANCE = 100 ether;
 
     function setUp() external {
-        config = new HelperConfig();
+        helper = new HelperConfig();
         vm.deal(PLAYER, STARTING_BALANCE);
-        (entranceFee, interval, v2_5Coordinator, gaslane, subscriptionId, callbackGasLimit) =
-            config.activeNetworkConfig();
-        raffle = new Raffle(entranceFee, interval, v2_5Coordinator, gaslane, subscriptionId, callbackGasLimit);
-
+        HelperConfig.NetworkConfig memory networkConfig = helper.getConfig();
+        raffle = new Raffle(
+            networkConfig.entranceFee,
+            networkConfig.interval,
+            networkConfig.vrfCoordinator,
+            networkConfig.gasLane,
+            networkConfig.subscriptionId,
+            networkConfig.callbackGasLimit
+        );
+        vrfCoordinator = VRFCoordinatorV2_5Mock(networkConfig.vrfCoordinator);
+        subscriptionId = networkConfig.subscriptionId;
+        entranceFee = networkConfig.entranceFee;
         vm.startPrank(msg.sender);
-        VRFCoordinatorV2_5Mock(v2_5Coordinator).fundSubscription(subscriptionId, 100 ether);
+        vrfCoordinator.fundSubscription(subscriptionId, 100 ether);
+        vrfCoordinator.addConsumer(subscriptionId, address(raffle));
         vm.stopPrank();
     }
 
