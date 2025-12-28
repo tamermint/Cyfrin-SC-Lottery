@@ -113,7 +113,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
      * @param - Unused parameter (for Chainlink Keeper compatibility).
      */
     function performUpkeep(
-        bytes calldata /* performData */
+        bytes memory /* performData */
     )
         external
     {

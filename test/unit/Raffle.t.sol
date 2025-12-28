@@ -12,6 +12,8 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 contract RaffleTest is Test {
     //EVENTS
     event EnteredRaffle(address indexed player);
+    event WinnerPicked(address indexed recentWinner);
+    event WinnerRequested(uint256 indexed requestId);
 
     Raffle public raffle;
     MockLinkToken token;
@@ -27,6 +29,7 @@ contract RaffleTest is Test {
     address vrfCoordinator;
 
     address public PLAYER = makeAddr("player");
+    address public PLAYER2 = makeAddr("player2");
     uint256 public constant STARTING_BALANCE = 10 ether;
     uint256 public constant LINK_BALANCE = 100 ether;
 
@@ -34,6 +37,7 @@ contract RaffleTest is Test {
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.deployContract();
         vm.deal(PLAYER, STARTING_BALANCE);
+        vm.deal(PLAYER2, STARTING_BALANCE);
         HelperConfig.NetworkConfig memory networkConfig = helperConfig.getConfig();
 
         entranceFee = networkConfig.entranceFee;
@@ -49,6 +53,12 @@ contract RaffleTest is Test {
         VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, 100 ether);
         VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subscriptionId, address(raffle));
         vm.stopPrank();
+    }
+
+    function testRaffleStateIsOpenWhenContractIsInitialized() public view {
+        uint256 state = uint256(uint8(raffle.getRaffleState()));
+        console.logUint(state);
+        assertEq(state, uint256(uint8(Raffle.RaffleState.OPEN)));
     }
 
     function testRaffleRevertsWhenYouDontPayEnough() public {
@@ -75,9 +85,15 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: entranceFee}();
     }
 
-    function testRaffleStateIsOpenWhenContractIsInitialized() public view {
-        uint256 state = uint256(uint8(raffle.getRaffleState()));
-        console.logUint(state);
-        assertEq(state, uint256(uint8(Raffle.RaffleState.OPEN)));
+    function testDontAllowPlayersToEnterWhenRaffleIsCalculating() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+        vm.prank(PLAYER2);
+        raffle.enterRaffle{value: entranceFee}();
     }
 }
