@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
-
+pragma solidity 0.8.19;
 import {Script, console} from "forge-std/Script.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
-
-pragma solidity 0.8.19;
 
 contract CreateSubscription is Script {
     function run() external {
@@ -34,13 +32,17 @@ contract CreateSubscription is Script {
 contract FundSubscription is Script {
     uint256 public constant FUND_AMOUNT = 3 ether;
 
-    function run() external {}
-
-    function fundSubscriptionUsingConfig() public {
-        CreateSubscription createSubscription = new CreateSubscription();
-        (uint256 subId, address vrfCoordinator) = createSubscription.createSubscriptionUsingConfig();
-        VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subId, FUND_AMOUNT);
+    function run() external {
+        fundSubscriptionUsingConfig();
     }
 
-    function fundSubscription(uint256 subscriptionId) public {}
+    function fundSubscriptionUsingConfig() public {
+        HelperConfig helper = new HelperConfig();
+        address vrfCoordinator = helper.getConfig().vrfCoordinator;
+        uint256 subscriptionId = helper.getConfig().subscriptionId;
+        address linkToken = helper.getConfig().link;
+        fundSubscription(vrfCoordinator, subscriptionId, linkToken);
+    }
+
+    function fundSubscription(address vrfCoordinator, uint256 subscriptionId, address linkToken) public {}
 }
