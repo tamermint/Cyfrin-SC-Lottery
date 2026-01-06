@@ -6,6 +6,10 @@ remappings = [
     '@chainlink/contracts=lib/chainlink-brownie-contracts/contracts/',
     '@solmate/tokens=lib/solmate/src/tokens/',
 ]
+fs_permissions = [
+    { access = "read", path = "./broadcast" },
+    { access = "read", path = "./reports" },
+]
 
 [lint]
 exclude_lints = ["screaming-snake-case-immutable", "mixed-case-variable"]
