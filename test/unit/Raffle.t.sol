@@ -3,6 +3,7 @@ pragma solidity 0.8.19;
 
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Raffle} from "../../src/raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
@@ -56,6 +57,14 @@ contract RaffleTest is Test {
         vm.stopPrank();
     }
 
+    modifier RaffleEntered() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        _;
+    }
+
     //RAFFLE TESTS
 
     function testRaffleStateIsOpenWhenContractIsInitialized() public view {
@@ -88,11 +97,7 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: entranceFee}();
     }
 
-    function testDontAllowPlayersToEnterWhenRaffleIsCalculating() public {
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
+    function testDontAllowPlayersToEnterWhenRaffleIsCalculating() public RaffleEntered {
         raffle.performUpkeep("");
 
         vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
@@ -115,12 +120,8 @@ contract RaffleTest is Test {
         assert(upkeepNeeded == false);
     }
 
-    function testCheckUpKeepReturnsFalseIfRaffleIsNotOpen() public {
+    function testCheckUpKeepReturnsFalseIfRaffleIsNotOpen() public RaffleEntered {
         //Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
         raffle.performUpkeep("");
 
         //Act
@@ -158,13 +159,7 @@ contract RaffleTest is Test {
         assert(upkeepNeeded == false);
     }
 
-    function testCheckUpKeepReturnsTrueIfAllConditionsArePassed() public {
-        //Arrange
-        vm.prank(PLAYER);
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-        raffle.enterRaffle{value: entranceFee}();
-
+    function testCheckUpKeepReturnsTrueIfAllConditionsArePassed() public RaffleEntered {
         //Act
         (bool upKeepNeeded,) = raffle.checkUpkeep("");
 
@@ -185,6 +180,44 @@ contract RaffleTest is Test {
     }
 
     //Perform Upkeep tests
+    function testPerformUpKeepRunsOnlyIfCheckUpKeepNeededIsTrue() public RaffleEntered {
+        //Act/Assert
+        raffle.performUpkeep("");
+    }
+
+    function testPerformUpKeepRevertsIfCheckUpKeepIsFalse() public {
+        uint256 numPlayers = 0;
+        uint256 balance = address(raffle).balance;
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: entranceFee}();
+        numPlayers = 1;
+        balance = balance + entranceFee;
+
+        vm.expectRevert(abi.encodeWithSelector(Raffle.Raffle__UpKeepNotNeeded.selector, balance, numPlayers, rState));
+        raffle.performUpkeep("");
+    }
+
+    function testPerformUpKeepUpdatesRaffleState() public RaffleEntered {
+        //Act
+        raffle.performUpkeep("");
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+        //Assert
+        assert(rState == Raffle.RaffleState.CALCULATING);
+    }
+
+    function testPerformUpKeepEmitsEvent() public RaffleEntered {
+        //Act
+        vm.recordLogs();
+        raffle.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        //Assert
+        assert(uint256(requestId) > 0);
+    }
 
     //Getter Tests
     function testEntranceFee() public view {
@@ -192,12 +225,7 @@ contract RaffleTest is Test {
         assertEq(entranceFeeTest, entranceFee);
     }
 
-    function testGetPlayersAddress() public {
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: entranceFee}();
-
+    function testGetPlayersAddress() public RaffleEntered {
         assertEq(address(PLAYER), raffle.getPlayers(0));
     }
 
