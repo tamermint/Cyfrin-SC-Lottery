@@ -44,6 +44,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     event EnteredRaffle(address indexed player);
     event WinnerPicked(address indexed recentWinner);
     event WinnerRequested(uint256 indexed requestId);
+    event UnsolicitedTransfer(address indexed sender, uint256 indexed amount);
 
     constructor(
         uint256 entranceFee,
@@ -216,6 +217,13 @@ contract Raffle is VRFConsumerBaseV2Plus {
      */
     function getRaffleState() public view returns (RaffleState) {
         return s_raffleState;
+    }
+
+    /**
+     * @notice handle simple ether transfers
+     */
+    receive() external payable {
+        emit UnsolicitedTransfer(msg.sender, msg.value);
     }
 }
 
