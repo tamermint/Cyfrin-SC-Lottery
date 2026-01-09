@@ -1,0 +1,21 @@
+-include .env
+
+.PHONY: all test deploy
+
+build :; forge build
+
+test :; forge test 
+
+test -v :; forge test -vvvv
+
+install :; forge install cyfrin/foundry-devops && forge install smartcontractkit/chainlink-brownie-contracts && forge install transmissions11/solmate
+
+update :; forge update
+
+format :; forge fmt 
+
+coverage :; forge coverage 
+
+snapshot :; forge snapshot
+
+anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
