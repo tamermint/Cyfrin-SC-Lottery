@@ -17,3 +17,6 @@ coverage :; forge coverage
 snapshot :; forge snapshot
 
 anvil :; anvil -m 'test test test test test test test test test test test junk' --steps-tracing --block-time 1
+
+deploy-sepolia :
+	@forge script script/DeployRaffle.s.sol:DeployRaffle --rpc-url $(SEPOLIA_RPC_URL) --account sepolia --broadcast --verify -vvvv
