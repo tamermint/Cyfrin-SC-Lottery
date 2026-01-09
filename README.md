@@ -29,8 +29,11 @@ A Foundry-based refresher project implementing a simple raffle (lottery) smart c
   - `raffle.sol` — Main Raffle contract (enterRaffle, checkUpkeep, performUpkeep, request/fulfill randomness)
 - `test/`
   - `unit/Raffle.t.sol` — Unit tests using Chainlink mocks
+  - `integration/Interactions.t.sol` — Integration tests for HelperConfig, Interactions, and Deploy scripts
 - `script/`
   - `HelperConfig.s.sol` — Network/test configuration helpers
+  - `Interactions.s.sol` — Create/fund subscriptions and add consumers
+  - `DeployRaffle.s.sol` — Deploys Raffle and registers it as a VRF consumer
 
 ---
 
@@ -57,6 +60,12 @@ forge test -vv
 
 ```bash
 forge test --mt testEventIsEmittedAfterAddingPlayer -vv
+```
+
+### Run integration tests
+
+```bash
+forge test --match-path test/integration/Interactions.t.sol -vv
 ```
 
 ---
@@ -90,7 +99,8 @@ forge test --mt testEventIsEmittedAfterAddingPlayer -vv
   - Ensure `fulfillRandomWords()` is properly overridden from `VRFConsumerBaseV2Plus`.
   - Use the correct mock version matching VRF v2.5 interfaces.
 
-- Ensure VRF subscriptions are funded in tests (see `setUp()` usage of `fundSubscription`).
+- Ensure VRF subscriptions are funded in local tests (see `setUp()` usage of `fundSubscription`).
+- When forking Sepolia, don't call mock-only functions like `fundSubscription()` or `addConsumer()` on the real coordinator. Use LINK `transferAndCall` to fund and ensure the deployed consumer is registered on your real subscription.
 
 ---
 
