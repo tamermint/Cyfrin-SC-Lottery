@@ -43,6 +43,16 @@ contract FundSubscription is Script, CodeConstants {
         address vrfCoordinator = helper.getConfig().vrfCoordinator;
         uint256 subscriptionId = helper.getConfig().subscriptionId;
         address linkToken = helper.getConfig().link;
+
+        if (subscriptionId == 0) {
+            CreateSubscription createSub = new CreateSubscription();
+            (uint256 subId, address vrfV2) = createSub.createSubscriptionUsingConfig();
+            subscriptionId = subId;
+            vrfCoordinator = vrfV2;
+            console.log("New subscription created: ", subscriptionId);
+            console.log("New VRF Coordinator address: ", vrfCoordinator);
+        }
+
         fundSubscription(vrfCoordinator, subscriptionId, linkToken);
     }
 
