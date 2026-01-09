@@ -92,7 +92,7 @@ contract InteractionTest is Test, CodeConstants {
 
         (uint256 subId, address coordinator) = creator.createSubscription(config.vrfCoordinator, config.account);
 
-        (, , , address owner,) = VRFCoordinatorV2_5Mock(coordinator).getSubscription(subId);
+        (,,, address owner,) = VRFCoordinatorV2_5Mock(coordinator).getSubscription(subId);
         assertEq(owner, config.account);
     }
 
@@ -102,9 +102,9 @@ contract InteractionTest is Test, CodeConstants {
         VRFCoordinatorV2_5Mock coordinator = VRFCoordinatorV2_5Mock(config.vrfCoordinator);
         FundSubscription funder = new FundSubscription();
 
-        (uint96 balanceBefore,, , ,) = coordinator.getSubscription(config.subscriptionId);
+        (uint96 balanceBefore,,,,) = coordinator.getSubscription(config.subscriptionId);
         funder.fundSubscription(config.vrfCoordinator, config.subscriptionId, config.link, config.account);
-        (uint96 balanceAfter,, , ,) = coordinator.getSubscription(config.subscriptionId);
+        (uint96 balanceAfter,,,,) = coordinator.getSubscription(config.subscriptionId);
 
         assertEq(balanceAfter, balanceBefore + uint96(funder.FUND_AMOUNT()));
     }
